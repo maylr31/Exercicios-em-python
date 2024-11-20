@@ -1,6 +1,6 @@
 # dados de entrada, a fun split divide uma string em várias partes com uma virgula ou espaço em branco etc.
-codigo1, quantidade1, valor_unitario1 = input().split() 
-codigo2, quantidade2, valor_unitario2 = input().split()
+codigo1, quantidade1, valor_unitario1 = input('Indique os valores:').split() 
+codigo2, quantidade2, valor_unitario2 = input('Indique os valores:').split()
 
 # Convertendo os valores de entrada para os tipos adequados
 codigo1 = int(codigo1)
