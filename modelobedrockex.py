@@ -1,53 +1,80 @@
 import boto3
+import json
 import streamlit as st
 
 # Configurar cliente do Amazon Bedrock
 def configurar_bedrock():
     return boto3.client(
-        "bedrock",  # Certifique-se de que o serviço correto é utilizado
-        region_name="us-east-1",  # Substitua pela sua região
+        "bedrock-runtime",  # Serviço correto para Bedrock Runtime
+        region_name="us-east-2",  # Substitua pela sua região
     )
 
 # Função para gerar resposta do modelo Claude
-def gerar_recomendacao(client, preferencia_usuario):
+def gerar_resposta(client, mensagem_usuario):
     try:
-        # Tente uma outra maneira de interagir com o modelo, por exemplo, usando 'invoke_endpoint' ou outro método
-        response = client.invoke_endpoint(
-            EndpointName="nome_do_endpoint",  # Endpoint correto para o modelo, se disponível
-            Body=preferencia_usuario,
-            ContentType="application/json",
-            Accept="application/json",
+        # Corpo da solicitação
+        payload = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 200,
+            "top_k": 250,
+            "stopSequences": [],
+            "temperature": 1,
+            "top_p": 0.999,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": mensagem_usuario
+                        }
+                    ]
+                }
+            ]
+        }
+
+        # Enviar solicitação para o modelo
+        response = client.invoke_model(
+            modelId="anthropic.claude-3-5-haiku-20241022-v1:0",  # Substitua pelo modelo correto
+            body=json.dumps(payload),
+            contentType="application/json",
+            accept="application/json",
         )
-        return response["Body"].read().decode("utf-8")
+        # Ler a resposta
+        resultado = json.loads(response["body"].read().decode("utf-8"))
+        return resultado
     except Exception as e:
         return f"Erro ao conectar ao Amazon Bedrock: {e}"
 
 # Interface do Streamlit
 def main():
-    st.title("Assistente Inteligente de Refeições Saudáveis 🍴")
-    st.sidebar.header("Preferências do Usuário")
+    st.title("Assistente com Claude no Amazon Bedrock 🤖")
+    st.sidebar.header("Entrada do Usuário")
 
-    # Inputs do usuário
-    tipo_refeicao = st.sidebar.selectbox("Escolha o tipo de refeição", ["Café da Manhã", "Almoço", "Jantar", "Lanche"])
-    vegano = st.sidebar.checkbox("Mostrar apenas opções veganas")
-    max_calorias = st.sidebar.slider("Máximo de calorias", 100, 1000, 500)
+    # Entrada do usuário
+    mensagem_usuario = st.sidebar.text_area(
+        "Digite sua mensagem para o modelo",
+        "Escreva algo aqui"
+    )
 
-    # Mensagem personalizada para o modelo
-    preferencia_usuario = f"""
-    Por favor, sugira uma refeição saudável para {tipo_refeicao}.
-    Prefiro opções com até {max_calorias} calorias. { "Somente vegano." if vegano else "" }
-    """
-
-    # Gerar recomendação
-    if st.sidebar.button("Gerar Refeição"):
-        st.write("Gerando sua recomendação... Aguarde.")
+    # Botão para enviar a mensagem
+    if st.sidebar.button("Enviar"):
+        st.write("Processando sua mensagem... Aguarde.")
         client = configurar_bedrock()
-        resposta = gerar_recomendacao(client, preferencia_usuario)
-        st.subheader("Recomendação de Refeição")
-        st.write(resposta)
+        resposta = gerar_resposta(client, mensagem_usuario)
+
+        if isinstance(resposta, str) and resposta.startswith("Erro"):
+            # Mostrar erro, caso exista
+            st.error(resposta)
+        else:
+            # Mostrar a resposta gerada
+            st.subheader("Resposta do Modelo")
+            st.write(resposta)
 
     # Rodapé
     st.caption("Desenvolvido por Mayra e equipe.")
 
 if __name__ == "__main__":
     main()
+
+
