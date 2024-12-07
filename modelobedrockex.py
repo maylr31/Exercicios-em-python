@@ -4,22 +4,21 @@ import streamlit as st
 # Configurar cliente do Amazon Bedrock
 def configurar_bedrock():
     return boto3.client(
-        "bedrock",
+        "bedrock",  # Certifique-se de que o serviço correto é utilizado
         region_name="us-east-1",  # Substitua pela sua região
     )
 
 # Função para gerar resposta do modelo Claude
 def gerar_recomendacao(client, preferencia_usuario):
     try:
-        response = client.invoke_model(
-            modelId="anthropic.claude-v2",  # ID do modelo Claude (ajuste conforme necessário)
-            body={
-                "input": preferencia_usuario
-            },
-            accept="application/json",
-            contentType="application/json",
+        # Tente uma outra maneira de interagir com o modelo, por exemplo, usando 'invoke_endpoint' ou outro método
+        response = client.invoke_endpoint(
+            EndpointName="nome_do_endpoint",  # Endpoint correto para o modelo, se disponível
+            Body=preferencia_usuario,
+            ContentType="application/json",
+            Accept="application/json",
         )
-        return response["body"].read().decode("utf-8")
+        return response["Body"].read().decode("utf-8")
     except Exception as e:
         return f"Erro ao conectar ao Amazon Bedrock: {e}"
 
